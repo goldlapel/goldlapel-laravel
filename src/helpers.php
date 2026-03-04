@@ -18,7 +18,7 @@ function buildUpstreamUrl(array $config): string
     }
 
     $port = $config['port'] ?? '';
-    if ($port === '' || $port === null) {
+    if ($port === '') {
         $port = '5432';
     }
 
@@ -28,9 +28,9 @@ function buildUpstreamUrl(array $config): string
     $password = $config['password'] ?? '';
 
     $userinfo = '';
-    if ($user !== '' && $user !== null) {
+    if ($user !== '') {
         $userinfo = rawurlencode($user);
-        if ($password !== '' && $password !== null) {
+        if ($password !== '') {
             $userinfo .= ':' . rawurlencode($password);
         }
         $userinfo .= '@';

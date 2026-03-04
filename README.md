@@ -14,7 +14,7 @@ Laravel's package auto-discovery registers the service provider automatically.
 
 ## Usage
 
-Add a `goldlapel` key to your PostgreSQL connection in `config/database.php`:
+All PostgreSQL connections are proxied automatically. Add a `goldlapel` key to customize settings or disable for a specific connection:
 
 ```php
 'pgsql' => [
@@ -69,7 +69,7 @@ If you have multiple PostgreSQL connections, each must use a different proxy por
 
 ## How It Works
 
-The service provider runs at boot time. For each PostgreSQL connection with `goldlapel` config, it:
+The service provider runs at boot time. For each PostgreSQL connection, it:
 
 1. Builds the upstream PostgreSQL URL from your connection parameters
 2. Starts the Gold Lapel proxy via [`GoldLapel::start()`](https://github.com/goldlapel/goldlapel-php)
