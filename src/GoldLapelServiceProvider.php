@@ -23,11 +23,12 @@ class GoldLapelServiceProvider extends ServiceProvider
             }
 
             $port = $glConfig['port'] ?? GoldLapel::DEFAULT_PORT;
+            $glOptions = $glConfig['config'] ?? [];
             $extraArgs = $glConfig['extra_args'] ?? [];
 
             try {
                 $upstream = buildUpstreamUrl($config);
-                GoldLapel::start($upstream, $port, $extraArgs);
+                GoldLapel::start($upstream, $port, $glOptions, $extraArgs);
             } catch (\Exception $e) {
                 logger()->warning("Gold Lapel failed to start for connection '{$name}': " . $e->getMessage());
                 continue;

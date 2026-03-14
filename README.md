@@ -27,6 +27,10 @@ All PostgreSQL connections are proxied automatically. Add a `goldlapel` key to c
     'goldlapel' => [
         'enabled' => true,      // default: true
         'port' => 7932,         // default: 7932
+        'config' => [           // default: []
+            'mode' => 'butler',
+            'pool_size' => 30,
+        ],
         'extra_args' => [],     // default: []
     ],
 ],
@@ -40,7 +44,24 @@ That's it. Gold Lapel starts when Laravel boots, watches your query patterns, an
 |-----|---------|-------------|
 | `goldlapel.enabled` | `true` | Set to `false` to disable for this connection |
 | `goldlapel.port` | `7932` | Local proxy port |
+| `goldlapel.config` | `[]` | Configuration array passed to Gold Lapel (see below) |
 | `goldlapel.extra_args` | `[]` | Extra CLI args passed to the Gold Lapel binary |
+
+The `config` array accepts any Gold Lapel configuration key using snake_case:
+
+```php
+'goldlapel' => [
+    'config' => [
+        'mode' => 'butler',
+        'pool_size' => 30,
+        'refresh_interval_secs' => 120,
+        'disable_result_cache' => true,
+        'replica' => ['postgresql://replica1:5432/db', 'postgresql://replica2:5432/db'],
+    ],
+],
+```
+
+See [`GoldLapel::configKeys()`](https://github.com/goldlapel/goldlapel-php) for the full list of supported keys.
 
 ## Multiple Databases
 

@@ -134,6 +134,7 @@ class GoldLapelServiceProviderTest extends TestCase
         $call = GoldLapel::$calls[0];
         $this->assertSame('postgresql://admin:secret@db.example.com:5432/mydb', $call['upstream']);
         $this->assertSame(GoldLapel::DEFAULT_PORT, $call['port']);
+        $this->assertSame([], $call['config']);
         $this->assertSame([], $call['extraArgs']);
 
         $this->assertSame('127.0.0.1', config('database.connections.pgsql.host'));
@@ -193,6 +194,82 @@ class GoldLapelServiceProviderTest extends TestCase
         $this->assertSame(9000, config('database.connections.pgsql.port'));
     }
 
+    public function testConfigPassthrough(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'host' => 'h',
+                'port' => '5432',
+                'database' => 'db',
+                'username' => 'u',
+                'password' => 'p',
+                'goldlapel' => [
+                    'config' => [
+                        'mode' => 'butler',
+                        'pool_size' => 30,
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertCount(1, GoldLapel::$calls);
+        $call = GoldLapel::$calls[0];
+        $this->assertSame(['mode' => 'butler', 'pool_size' => 30], $call['config']);
+        $this->assertSame([], $call['extraArgs']);
+    }
+
+    public function testConfigWithPortAndExtraArgs(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'host' => 'h',
+                'port' => '5432',
+                'database' => 'db',
+                'username' => 'u',
+                'password' => 'p',
+                'goldlapel' => [
+                    'port' => 9000,
+                    'config' => [
+                        'mode' => 'butler',
+                        'disable_pool' => true,
+                    ],
+                    'extra_args' => ['--threshold-duration-ms', '200'],
+                ],
+            ],
+        ]);
+
+        $this->assertCount(1, GoldLapel::$calls);
+        $call = GoldLapel::$calls[0];
+        $this->assertSame(9000, $call['port']);
+        $this->assertSame(['mode' => 'butler', 'disable_pool' => true], $call['config']);
+        $this->assertSame(['--threshold-duration-ms', '200'], $call['extraArgs']);
+
+        $this->assertSame(9000, config('database.connections.pgsql.port'));
+    }
+
+    public function testEmptyConfigArray(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'host' => 'h',
+                'port' => '5432',
+                'database' => 'db',
+                'username' => 'u',
+                'password' => 'p',
+                'goldlapel' => [
+                    'config' => [],
+                ],
+            ],
+        ]);
+
+        $this->assertCount(1, GoldLapel::$calls);
+        $call = GoldLapel::$calls[0];
+        $this->assertSame([], $call['config']);
+    }
+
     public function testMultiplePgsqlConnections(): void
     {
         $this->bootProvider([
@@ -240,6 +317,7 @@ class GoldLapelServiceProviderTest extends TestCase
         $this->assertCount(1, GoldLapel::$calls);
         $call = GoldLapel::$calls[0];
         $this->assertSame(GoldLapel::DEFAULT_PORT, $call['port']);
+        $this->assertSame([], $call['config']);
         $this->assertSame([], $call['extraArgs']);
     }
 }

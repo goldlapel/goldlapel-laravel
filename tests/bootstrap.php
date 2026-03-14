@@ -15,9 +15,9 @@ namespace GoldLapel {
             self::$calls = [];
         }
 
-        public static function start(string $upstream, ?int $port = null, array $extraArgs = []): string
+        public static function start(string $upstream, ?int $port = null, array $config = [], array $extraArgs = []): string
         {
-            self::$calls[] = compact('upstream', 'port', 'extraArgs');
+            self::$calls[] = compact('upstream', 'port', 'config', 'extraArgs');
             return "postgresql://localhost:{$port}/db";
         }
 
