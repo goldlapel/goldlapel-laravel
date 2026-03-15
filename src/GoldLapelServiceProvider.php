@@ -28,6 +28,7 @@ class GoldLapelServiceProvider extends ServiceProvider
 
             try {
                 $upstream = buildUpstreamUrl($config);
+                putenv('GOLDLAPEL_CLIENT=laravel');
                 GoldLapel::start($upstream, $port, $glOptions, $extraArgs);
             } catch (\Exception $e) {
                 logger()->warning("Gold Lapel failed to start for connection '{$name}': " . $e->getMessage());
