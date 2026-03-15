@@ -31,7 +31,7 @@ jobs:
 
       - name: Strip local dev config
         run: |
-          jq 'del(.repositories) | del(.["minimum-stability"]) | del(.["prefer-stable"])' \
+          jq 'del(.repositories) | .["minimum-stability"] = "RC"' \
             composer.json > tmp && mv tmp composer.json
 
       - name: Install dependencies
