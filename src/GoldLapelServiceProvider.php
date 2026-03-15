@@ -37,6 +37,8 @@ class GoldLapelServiceProvider extends ServiceProvider
             config([
                 "database.connections.{$name}.host" => '127.0.0.1',
                 "database.connections.{$name}.port" => $port,
+                "database.connections.{$name}.url" => null,
+                "database.connections.{$name}.sslmode" => 'prefer',
             ]);
         }
     }

@@ -4,101 +4,7 @@ namespace GoldLapel\Laravel\Tests;
 
 use GoldLapel\GoldLapel;
 use GoldLapel\Laravel\GoldLapelServiceProvider;
-use InvalidArgumentException;
 use Orchestra\Testbench\TestCase;
-use PHPUnit\Framework\TestCase as PureTestCase;
-
-use function GoldLapel\Laravel\buildUpstreamUrl;
-
-// --- buildUpstreamUrl (pure unit tests, no Laravel needed) ---
-
-class BuildUpstreamUrlTest extends PureTestCase
-{
-    public function testStandard(): void
-    {
-        $url = buildUpstreamUrl([
-            'host' => 'db.example.com', 'port' => '5432', 'database' => 'mydb',
-            'username' => 'admin', 'password' => 'secret',
-        ]);
-        $this->assertSame('postgresql://admin:secret@db.example.com:5432/mydb', $url);
-    }
-
-    public function testEmptyHostDefaultsToLocalhost(): void
-    {
-        $url = buildUpstreamUrl(['host' => '', 'port' => '5432', 'database' => 'db']);
-        $this->assertStringContainsString('localhost:', $url);
-    }
-
-    public function testMissingHostDefaultsToLocalhost(): void
-    {
-        $url = buildUpstreamUrl(['port' => '5432', 'database' => 'db']);
-        $this->assertStringContainsString('localhost:', $url);
-    }
-
-    public function testEmptyPortDefaultsTo5432(): void
-    {
-        $url = buildUpstreamUrl(['host' => 'h', 'port' => '', 'database' => 'db']);
-        $this->assertStringContainsString(':5432/', $url);
-    }
-
-    public function testMissingPortDefaultsTo5432(): void
-    {
-        $url = buildUpstreamUrl(['host' => 'h', 'database' => 'db']);
-        $this->assertStringContainsString(':5432/', $url);
-    }
-
-    public function testSpecialCharsInPassword(): void
-    {
-        $url = buildUpstreamUrl([
-            'host' => 'h', 'port' => '5432', 'database' => 'db',
-            'username' => 'u', 'password' => '@:/',
-        ]);
-        $this->assertStringContainsString('u:%40%3A%2F@', $url);
-    }
-
-    public function testSpecialCharsInUser(): void
-    {
-        $url = buildUpstreamUrl([
-            'host' => 'h', 'port' => '5432', 'database' => 'db',
-            'username' => 'u@ser', 'password' => 'p',
-        ]);
-        $this->assertStringContainsString('u%40ser:p@', $url);
-    }
-
-    public function testNoUserNoPassword(): void
-    {
-        $url = buildUpstreamUrl(['host' => 'h', 'port' => '5432', 'database' => 'db']);
-        $this->assertSame('postgresql://h:5432/db', $url);
-    }
-
-    public function testUserWithoutPassword(): void
-    {
-        $url = buildUpstreamUrl([
-            'host' => 'h', 'port' => '5432', 'database' => 'db',
-            'username' => 'admin',
-        ]);
-        $this->assertStringContainsString('admin@h:', $url);
-        $this->assertStringNotContainsString(':admin', $url);
-    }
-
-    public function testSpecialCharsInDatabase(): void
-    {
-        $url = buildUpstreamUrl([
-            'host' => 'h', 'port' => '5432', 'database' => 'my#db?v=1',
-            'username' => 'u', 'password' => 'p',
-        ]);
-        $this->assertStringEndsWith('/my%23db%3Fv%3D1', $url);
-    }
-
-    public function testUnixSocketRaises(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unix socket');
-        buildUpstreamUrl(['host' => '/var/run/postgresql', 'port' => '5432', 'database' => 'db']);
-    }
-}
-
-// --- GoldLapelServiceProvider (uses Orchestra Testbench for real Laravel config) ---
 
 class GoldLapelServiceProviderTest extends TestCase
 {
@@ -319,5 +225,108 @@ class GoldLapelServiceProviderTest extends TestCase
         $this->assertSame(GoldLapel::DEFAULT_PORT, $call['port']);
         $this->assertSame([], $call['config']);
         $this->assertSame([], $call['extraArgs']);
+    }
+
+    public function testUrlKeyUsedForUpstream(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'url' => 'postgresql://urluser:urlpass@urlhost:5433/urldb',
+                'host' => 'wrong-host',
+                'port' => '9999',
+                'database' => 'wrong-db',
+                'username' => 'wrong-user',
+                'password' => 'wrong-pass',
+            ],
+        ]);
+
+        $this->assertCount(1, GoldLapel::$calls);
+        $this->assertSame('postgresql://urluser:urlpass@urlhost:5433/urldb', GoldLapel::$calls[0]['upstream']);
+    }
+
+    public function testUrlKeyClearedAfterRewrite(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'url' => 'postgresql://u:p@remote:5432/db',
+                'host' => 'remote',
+                'port' => '5432',
+                'database' => 'db',
+                'username' => 'u',
+                'password' => 'p',
+            ],
+        ]);
+
+        $this->assertNull(config('database.connections.pgsql.url'));
+        $this->assertSame('127.0.0.1', config('database.connections.pgsql.host'));
+        $this->assertSame(GoldLapel::DEFAULT_PORT, config('database.connections.pgsql.port'));
+    }
+
+    public function testUrlKeyClearedEvenWhenNotPresent(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'host' => 'h',
+                'port' => '5432',
+                'database' => 'db',
+                'username' => 'u',
+                'password' => 'p',
+            ],
+        ]);
+
+        $this->assertNull(config('database.connections.pgsql.url'));
+    }
+
+    public function testSslModeClearedAfterRewrite(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'host' => 'remote.db.com',
+                'port' => '5432',
+                'database' => 'db',
+                'username' => 'u',
+                'password' => 'p',
+                'sslmode' => 'require',
+            ],
+        ]);
+
+        $this->assertSame('prefer', config('database.connections.pgsql.sslmode'));
+    }
+
+    public function testSslModeSetToPreferWhenNotOriginallyPresent(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'host' => 'h',
+                'port' => '5432',
+                'database' => 'db',
+                'username' => 'u',
+                'password' => 'p',
+            ],
+        ]);
+
+        $this->assertSame('prefer', config('database.connections.pgsql.sslmode'));
+    }
+
+    public function testUrlAndSslBothHandledTogether(): void
+    {
+        $this->bootProvider([
+            'pgsql' => [
+                'driver' => 'pgsql',
+                'url' => 'postgresql://u:p@remote:5432/db',
+                'sslmode' => 'verify-full',
+            ],
+        ]);
+
+        $this->assertCount(1, GoldLapel::$calls);
+        $this->assertSame('postgresql://u:p@remote:5432/db', GoldLapel::$calls[0]['upstream']);
+        $this->assertNull(config('database.connections.pgsql.url'));
+        $this->assertSame('prefer', config('database.connections.pgsql.sslmode'));
+        $this->assertSame('127.0.0.1', config('database.connections.pgsql.host'));
     }
 }

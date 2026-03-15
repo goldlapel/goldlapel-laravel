@@ -4,8 +4,41 @@ namespace GoldLapel\Laravel;
 
 use InvalidArgumentException;
 
+function parseUrlIntoConfig(array $config): array
+{
+    $url = $config['url'] ?? null;
+    if ($url === null || $url === '') {
+        return $config;
+    }
+
+    $parts = parse_url($url);
+    if ($parts === false) {
+        return $config;
+    }
+
+    if (isset($parts['host'])) {
+        $config['host'] = $parts['host'];
+    }
+    if (isset($parts['port'])) {
+        $config['port'] = (string) $parts['port'];
+    }
+    if (isset($parts['user'])) {
+        $config['username'] = rawurldecode($parts['user']);
+    }
+    if (isset($parts['pass'])) {
+        $config['password'] = rawurldecode($parts['pass']);
+    }
+    if (isset($parts['path']) && $parts['path'] !== '/') {
+        $config['database'] = rawurldecode(ltrim($parts['path'], '/'));
+    }
+
+    return $config;
+}
+
 function buildUpstreamUrl(array $config): string
 {
+    $config = parseUrlIntoConfig($config);
+
     $host = $config['host'] ?? '';
     if ($host === '') {
         $host = 'localhost';
