@@ -1,8 +1,8 @@
 # goldlapel-laravel
 
-Laravel service provider for [Gold Lapel](https://goldlapel.com) — self-optimizing Postgres proxy that automatically creates materialized views and indexes.
+Laravel service provider for [Gold Lapel](https://goldlapel.com) — self-optimizing Postgres proxy that automatically creates materialized views and indexes. Includes L1 native cache — an in-process cache that serves repeated reads in microseconds with no TCP round-trip.
 
-One `composer require` and a config key. Gold Lapel starts automatically when Laravel boots.
+One `composer require` and a config key. Gold Lapel starts automatically when Laravel boots, with L1 cache enabled out of the box.
 
 ## Install
 
@@ -94,6 +94,6 @@ The service provider runs at boot time. For each PostgreSQL connection, it:
 
 1. Builds the upstream PostgreSQL URL from your connection parameters
 2. Starts the Gold Lapel proxy via [`GoldLapel::start()`](https://github.com/goldlapel/goldlapel-php)
-3. Rewrites the connection config to route through the proxy (`127.0.0.1:7932`)
+3. Returns a connection through the proxy (`127.0.0.1:7932`) with L1 native cache active
 
-Everything else — Eloquent, migrations, raw queries — works exactly as before, just faster.
+Everything else — Eloquent, migrations, raw queries — works exactly as before, just faster. Repeated reads hit the L1 cache and return in microseconds without a TCP round-trip.
