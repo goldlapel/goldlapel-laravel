@@ -28,7 +28,7 @@ All PostgreSQL connections are proxied automatically. Add a `goldlapel` key to c
         'enabled' => true,      // default: true
         'port' => 7932,         // default: 7932
         'config' => [           // default: []
-            'mode' => 'butler',
+            'mode' => 'waiter',
             'pool_size' => 30,
         ],
         'extra_args' => [],     // default: []
@@ -52,7 +52,7 @@ The `config` array accepts any Gold Lapel configuration key using snake_case:
 ```php
 'goldlapel' => [
     'config' => [
-        'mode' => 'butler',
+        'mode' => 'waiter',
         'pool_size' => 30,
         'refresh_interval_secs' => 120,
         'disable_result_cache' => true,

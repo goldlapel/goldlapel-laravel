@@ -128,7 +128,7 @@ class GoldLapelServiceProviderTest extends TestCase
                 'password' => 'p',
                 'goldlapel' => [
                     'config' => [
-                        'mode' => 'butler',
+                        'mode' => 'waiter',
                         'pool_size' => 30,
                     ],
                 ],
@@ -137,7 +137,7 @@ class GoldLapelServiceProviderTest extends TestCase
 
         $this->assertCount(1, GoldLapel::$calls);
         $call = GoldLapel::$calls[0];
-        $this->assertSame(['mode' => 'butler', 'pool_size' => 30], $call['config']);
+        $this->assertSame(['mode' => 'waiter', 'pool_size' => 30], $call['config']);
         $this->assertSame([], $call['extraArgs']);
     }
 
@@ -154,7 +154,7 @@ class GoldLapelServiceProviderTest extends TestCase
                 'goldlapel' => [
                     'port' => 9000,
                     'config' => [
-                        'mode' => 'butler',
+                        'mode' => 'waiter',
                         'disable_pool' => true,
                     ],
                     'extra_args' => ['--threshold-duration-ms', '200'],
@@ -165,7 +165,7 @@ class GoldLapelServiceProviderTest extends TestCase
         $this->assertCount(1, GoldLapel::$calls);
         $call = GoldLapel::$calls[0];
         $this->assertSame(9000, $call['port']);
-        $this->assertSame(['mode' => 'butler', 'disable_pool' => true], $call['config']);
+        $this->assertSame(['mode' => 'waiter', 'disable_pool' => true], $call['config']);
         $this->assertSame(['--threshold-duration-ms', '200'], $call['extraArgs']);
 
         $this->assertSame(9000, config('database.connections.pgsql.port'));
